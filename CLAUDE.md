@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Template repository** for building frontend applications with:
+**Team Task Management** - A task management application for small teams where admins create and assign tasks and team members view and complete their own work.
 
-- Next.js 16 (App Router) + React 19 + TypeScript 5 (strict)
-- Tailwind CSS 4 + Shadcn UI (via MCP server)
-- Vitest + React Testing Library
-- Production-ready API client for OpenAPI-defined REST endpoints
+**Tech Stack:** Next.js 16 + React 19 + TypeScript 5 + Tailwind CSS 4 + Shadcn UI
 
-Users clone this template and use Claude Code to generate features, components, and API integrations.
+**Backend API:** Defined in `generated-docs/specs/api-spec.yaml`. Connects to live REST API at `http://localhost:3001/api`.
+
+**Planned Epics:**
+1. Authentication and Role-Based Routing - Sign-in page, session handling, role detection, and routing
+2. Task Management - Full task UI for both roles (team-member and admin views)
 
 ## Repository Structure
 
