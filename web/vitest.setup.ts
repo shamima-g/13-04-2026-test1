@@ -1,6 +1,14 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom/vitest';
 
+// MSW — intercept API calls during tests
+import { server } from '@/mocks/server';
+import { beforeAll, afterEach, afterAll } from 'vitest';
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
 // Accessibility testing with axe-core
 import * as matchers from 'vitest-axe/matchers';
 import { expect } from 'vitest';
