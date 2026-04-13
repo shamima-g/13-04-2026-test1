@@ -12,17 +12,16 @@ import type { NextAuthConfig } from 'next-auth';
  * Demo users are available for testing. See credentials below.
  *
  * PRODUCTION MODE:
- * Demo users are DISABLED. You MUST implement a real authentication provider:
- * 1. Use a database adapter: https://authjs.dev/getting-started/adapters
- * 2. Or configure OAuth providers (Google, Azure AD, etc.)
+ * Demo users are DISABLED. You MUST implement a real authentication provider.
  *
  * Demo credentials (DEVELOPMENT ONLY):
  * | Email                 | Password    | Role          |
  * |-----------------------|-------------|---------------|
- * | admin@example.com     | Admin123!   | ADMIN         |
- * | power@example.com     | Power123!   | POWER_USER    |
- * | user@example.com      | User123!    | STANDARD_USER |
- * | readonly@example.com  | Reader123!  | READ_ONLY     |
+ * | admin@example.com     | Admin123!   | admin         |
+ * | user@example.com      | User123!    | team-member   |
+ *
+ * FRS roles: admin (manager) and team-member (standard employee).
+ * No other roles exist in this system.
  */
 
 // NEXTAUTH_SECRET validation
@@ -53,8 +52,9 @@ if (
 }
 
 /**
- * Demo users - ONLY available in development mode
- * These are automatically disabled in production builds.
+ * Demo users - ONLY available in development mode.
+ * Exactly two demo accounts corresponding to the two FRS roles.
+ * Old template accounts (power@example.com, readonly@example.com) have been removed.
  */
 const demoUsers = [
   {
@@ -66,24 +66,10 @@ const demoUsers = [
   },
   {
     id: '2',
-    email: 'power@example.com',
-    name: 'Power User',
-    password: '$2b$10$daDqYt5RAezYKtDMfNnzBunyvs/W7FRhgVPjvq0SsdOiD1jYBKwZm', // Power123!
-    role: UserRole.POWER_USER,
-  },
-  {
-    id: '3',
     email: 'user@example.com',
-    name: 'Standard User',
+    name: 'Team Member',
     password: '$2b$10$DG4whrMZU7fQm/oIMRom2u8BuyglJ0ZLWKDHN2p.jaAaxvub96E5m', // User123!
-    role: UserRole.STANDARD_USER,
-  },
-  {
-    id: '4',
-    email: 'readonly@example.com',
-    name: 'Read-Only User',
-    password: '$2b$10$7pcgpuizrAyyOcwbT37GruxwFsIg9NOuGcDzDUHjJm2SSCD70TxGy', // Reader123!
-    role: UserRole.READ_ONLY,
+    role: UserRole.TEAM_MEMBER,
   },
 ];
 
@@ -102,8 +88,6 @@ export const authConfig: NextAuthConfig = {
         role: UserRole;
       } | null> {
         // Demo users are ONLY available in development mode
-        // In production, this credentials provider will always return null
-        // You must implement a real authentication provider for production
         if (process.env.NODE_ENV === 'production') {
           console.error(
             '🚨 Demo credentials are disabled in production. ' +
@@ -142,18 +126,6 @@ export const authConfig: NextAuthConfig = {
         };
       },
     }),
-
-    // TODO: Add OAuth providers for production
-    // GoogleProvider({
-    //   clientId: process.env.GOOGLE_CLIENT_ID!,
-    //   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    // }),
-
-    // AzureADProvider({
-    //   clientId: process.env.AZURE_AD_CLIENT_ID!,
-    //   clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
-    //   tenantId: process.env.AZURE_AD_TENANT_ID!,
-    // }),
   ],
 
   pages: {
@@ -176,6 +148,15 @@ export const authConfig: NextAuthConfig = {
         session.user.role = (token.role as UserRole) || DEFAULT_ROLE;
       }
       return session;
+    },
+
+    async redirect({ url, baseUrl }) {
+      // After sign-in, the redirect is handled by the home page (/) which reads
+      // the session role and redirects to the appropriate landing page.
+      // This callback just ensures we stay on the same origin.
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     },
   },
 

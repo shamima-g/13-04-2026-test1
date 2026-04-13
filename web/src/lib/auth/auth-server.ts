@@ -8,9 +8,12 @@
  * Following Next.js 16 and Vercel's security recommendations, authentication
  * checks are performed in Server Components (layouts) rather than middleware/proxy.
  * This approach provides defense-in-depth and ensures auth checks cannot be bypassed.
+ *
+ * BA Decision 2: No callbackUrl / return-URL is preserved after session expiry.
+ * After re-authentication, users are always directed to their role-based landing page
+ * (/tasks for team-member, /tasks/all for admin). This is consistent with AC-1/AC-2.
  */
 
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { auth } from '@/lib/auth/auth';
@@ -23,37 +26,27 @@ import type { Session } from 'next-auth';
  * Requires authentication for the current page.
  * Redirects to sign-in if not authenticated.
  *
+ * Per BA Decision 2: no callbackUrl is appended to the sign-in URL.
+ * After re-authentication, the user is directed to their role-based landing page.
+ *
  * Usage in Server Components:
  * ```tsx
- * export default async function DashboardPage() {
+ * export default async function TasksPage() {
  *   const session = await requireAuth();
- *   // User is guaranteed to be authenticated here
  *   return <div>Welcome {session.user.name}</div>;
  * }
  * ```
  *
- * @param callbackUrl - Optional URL to redirect back to after sign-in
  * @returns Session object if authenticated
  */
-export async function requireAuth(callbackUrl?: string): Promise<Session> {
+export async function requireAuth(): Promise<Session> {
   const session = await auth();
 
   if (!session) {
-    // Auto-detect current path if callbackUrl not provided
-    let redirectUrl = callbackUrl;
-    if (!redirectUrl) {
-      const headersList = await headers();
-      const pathname =
-        headersList.get('x-pathname') || headersList.get('x-invoke-path');
-      if (pathname) {
-        redirectUrl = pathname;
-      }
-    }
-
-    const signInUrl = redirectUrl
-      ? `/auth/signin?callbackUrl=${encodeURIComponent(redirectUrl)}`
-      : '/auth/signin';
-    redirect(signInUrl);
+    // BA Decision 2: redirect to plain /auth/signin without callbackUrl.
+    // After re-authentication, the home page (/) reads the session role and
+    // redirects to the correct landing page (/tasks or /tasks/all).
+    redirect('/auth/signin');
   }
 
   return session;
@@ -63,26 +56,15 @@ export async function requireAuth(callbackUrl?: string): Promise<Session> {
  * Requires minimum role level for the current page (hierarchical check).
  * Redirects to forbidden page if user doesn't meet minimum role requirement.
  *
- * Hierarchical: ADMIN (100) can access POWER_USER (50) routes.
- *
- * Usage in Server Components:
- * ```tsx
- * export default async function PowerUserPage() {
- *   // Both ADMIN and POWER_USER can access
- *   const session = await requireMinimumRole(UserRole.POWER_USER);
- *   return <div>Power User Features</div>;
- * }
- * ```
+ * Hierarchical: ADMIN (100) can access TEAM_MEMBER (10) routes.
  *
  * @param minimumRole - The minimum required role level
- * @param callbackUrl - Optional URL to redirect back to after sign-in
  * @returns Session object if user meets minimum role requirement
  */
 export async function requireMinimumRole(
   minimumRole: UserRole,
-  callbackUrl?: string,
 ): Promise<Session> {
-  const session = await requireAuth(callbackUrl);
+  const session = await requireAuth();
 
   if (!hasMinimumRole(session.user, minimumRole)) {
     const forbiddenUrl = `/auth/forbidden?required=${minimumRole}&current=${session.user.role}`;
@@ -96,26 +78,13 @@ export async function requireMinimumRole(
  * Requires exact role match for the current page (strict check).
  * Redirects to forbidden page if user doesn't have the exact role.
  *
- * Non-hierarchical: Only ADMIN can access ADMIN routes, not POWER_USER.
- *
- * Usage in Server Components:
- * ```tsx
- * export default async function AdminOnlyPage() {
- *   // ONLY users with exact ADMIN role can access
- *   const session = await requireExactRole(UserRole.ADMIN);
- *   return <div>Admin Dashboard</div>;
- * }
- * ```
+ * Non-hierarchical: Only ADMIN can access ADMIN routes.
  *
  * @param role - The exact required role
- * @param callbackUrl - Optional URL to redirect back to after sign-in
  * @returns Session object if user has exact role
  */
-export async function requireExactRole(
-  role: UserRole,
-  callbackUrl?: string,
-): Promise<Session> {
-  const session = await requireAuth(callbackUrl);
+export async function requireExactRole(role: UserRole): Promise<Session> {
+  const session = await requireAuth();
 
   if (session.user.role !== role) {
     const forbiddenUrl = `/auth/forbidden?required=${role}&current=${session.user.role}`;
@@ -150,17 +119,6 @@ export async function getSession(): Promise<Session | null> {
  * Checks if the current user meets minimum role requirement (hierarchical).
  * Returns false if not authenticated.
  *
- * Usage in Server Components:
- * ```tsx
- * export default async function Page() {
- *   const canAccessPowerFeatures = await checkMinimumRole(UserRole.POWER_USER);
- *   if (canAccessPowerFeatures) {
- *     return <PowerUserFeatures />;
- *   }
- *   return <RegularContent />;
- * }
- * ```
- *
  * @param minimumRole - The minimum role level to check for
  * @returns true if user meets minimum role requirement, false otherwise
  */
@@ -179,17 +137,6 @@ export async function checkMinimumRole(
 /**
  * Checks if the current user has exact role match (non-hierarchical).
  * Returns false if not authenticated.
- *
- * Usage in Server Components:
- * ```tsx
- * export default async function Page() {
- *   const isExactlyAdmin = await checkExactRole(UserRole.ADMIN);
- *   if (isExactlyAdmin) {
- *     return <AdminOnlyControls />;
- *   }
- *   return <RegularContent />;
- * }
- * ```
  *
  * @param role - The exact role to check for
  * @returns true if user has exact role, false otherwise

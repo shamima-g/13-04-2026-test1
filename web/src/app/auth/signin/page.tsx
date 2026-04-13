@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 import { useState } from 'react';
 
@@ -9,57 +8,29 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { signIn } from '@/lib/auth/auth-client';
 
 /**
- * Validates callback URL to prevent open redirect attacks.
- * Only allows relative URLs (same-origin).
+ * Resolves the role-based landing page URL.
  *
- * @param url - The callback URL to validate
- * @returns Validated URL (relative) or '/' if invalid
+ * Per AC-1: team-member → /tasks
+ * Per AC-2: admin → /tasks/all
+ * Per BA Decision 2: no callbackUrl / return-URL is used.
  */
-function validateCallbackUrl(url: string | null): string {
-  // Default to home if no URL provided
-  if (!url) return '/';
-
-  try {
-    // Prevent protocol-relative URLs (//evil.com)
-    if (url.startsWith('//')) {
-      console.warn('Open redirect attempt blocked:', url);
-      return '/';
-    }
-
-    // Only allow relative URLs (must start with /)
-    if (!url.startsWith('/')) {
-      console.warn('Open redirect attempt blocked:', url);
-      return '/';
-    }
-
-    // Additional check: prevent data: or javascript: URIs
-    if (url.toLowerCase().match(/^\/*(data|javascript):/i)) {
-      console.warn('Potential XSS attempt blocked:', url);
-      return '/';
-    }
-
-    // Valid relative URL
-    return url;
-  } catch (error) {
-    console.error('Error validating callback URL:', error);
-    return '/';
-  }
+function getRoleLandingPage(role: string): string {
+  if (role === 'admin') return '/tasks/all';
+  return '/tasks'; // team-member default
 }
 
 function SignInForm(): React.ReactElement {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = validateCallbackUrl(searchParams.get('callbackUrl'));
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -77,8 +48,15 @@ function SignInForm(): React.ReactElement {
       const result = await signIn(email, password);
 
       if (result.ok) {
-        router.push(callbackUrl);
-        router.refresh();
+        // AC-1/AC-2: redirect to role-based landing page (no callbackUrl)
+        // BA Decision 2: always role-based, never return-URL
+        const role = (result as { ok: boolean; role?: string }).role;
+        if (role) {
+          router.push(getRoleLandingPage(role));
+        } else {
+          // Fallback: go to home page which will read session and redirect appropriately
+          router.push('/');
+        }
       } else {
         setError(result.error || 'Invalid credentials');
       }
@@ -147,15 +125,6 @@ function SignInForm(): React.ReactElement {
             >
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
-            <div className="text-sm text-muted-foreground text-center">
-              Don&apos;t have an account?{' '}
-              <Link
-                href="/auth/signup"
-                className="text-primary hover:underline"
-              >
-                Sign up
-              </Link>
-            </div>
           </CardFooter>
         </form>
       </Card>

@@ -1,69 +1,52 @@
 /**
  * User Role Definitions
  *
- * IMPORTANT: These are example roles for demonstration purposes.
- * Each application should define its own roles based on business requirements.
- *
- * To customize for your project:
- * 1. Update the UserRole enum with your application's specific roles
- * 2. Update the ROLE_HIERARCHY object to define permission levels
- * 3. Update the roleDescriptions with meaningful descriptions
- * 4. Consider role-to-permission mappings for fine-grained access control
+ * Two roles are defined per the Feature Requirements Specification (FRS):
+ * - admin: manager/team lead — creates and assigns tasks, views all tasks
+ * - team-member: standard employee — views and completes own assigned tasks
  */
 
 /**
- * Example role enum pattern.
- * Replace these with your application's specific roles.
+ * FRS-defined role enum.
+ * Only two roles exist in this application.
  */
 export enum UserRole {
   /**
-   * Full system access - can manage users, configurations, and all resources
+   * Manager or team lead.
+   * Can create tasks, assign tasks, edit task details, delete tasks, view all tasks.
+   * Cannot mark tasks as complete.
    */
   ADMIN = 'admin',
 
   /**
-   * Advanced features and bulk operations - can manage resources within their scope
+   * Standard employee who receives and completes assigned work.
+   * Can view their own assigned tasks only and mark them as complete.
+   * No access to admin routes.
    */
-  POWER_USER = 'power_user',
-
-  /**
-   * Standard access - can create, edit, and delete own resources
-   */
-  STANDARD_USER = 'standard_user',
-
-  /**
-   * View-only access - can only read data, cannot make changes
-   */
-  READ_ONLY = 'read_only',
+  TEAM_MEMBER = 'team-member',
 }
 
 /**
  * Role hierarchy defines the privilege level of each role.
  * Higher numbers indicate greater privilege.
- * Used for "at least" permission checks (e.g., "requires power user or higher").
  */
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   [UserRole.ADMIN]: 100,
-  [UserRole.POWER_USER]: 50,
-  [UserRole.STANDARD_USER]: 25,
-  [UserRole.READ_ONLY]: 10,
+  [UserRole.TEAM_MEMBER]: 10,
 };
 
 /**
  * Human-readable role descriptions for UI display
  */
 export const roleDescriptions: Record<UserRole, string> = {
-  [UserRole.ADMIN]: 'Full system access',
-  [UserRole.POWER_USER]: 'Advanced features and bulk operations',
-  [UserRole.STANDARD_USER]: 'Standard user access',
-  [UserRole.READ_ONLY]: 'View-only access',
+  [UserRole.ADMIN]: 'Manager — creates and manages tasks for the team',
+  [UserRole.TEAM_MEMBER]: 'Team member — views and completes assigned tasks',
 };
 
 /**
- * Default role assigned to new users if not specified.
- * Customize based on your application's security requirements.
+ * Default role for new users (lower-privilege FRS role).
  */
-export const DEFAULT_ROLE = UserRole.STANDARD_USER;
+export const DEFAULT_ROLE = UserRole.TEAM_MEMBER;
 
 /**
  * Type guard to check if a string is a valid UserRole
