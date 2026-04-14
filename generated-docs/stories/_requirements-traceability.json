@@ -1,25 +1,13 @@
 {
-  "generated": "2026-04-13T11:17:26.202Z",
+  "generated": "2026-04-14T05:29:47.513Z",
   "featureName": "Team Task Management",
-  "epicsScoped": 1,
+  "epicsScoped": 2,
   "totalEpics": 2,
   "coverage": {
     "functional": {
       "total": 17,
-      "covered": 2,
+      "covered": 14,
       "uncovered": [
-        "R3",
-        "R4",
-        "R5",
-        "R6",
-        "R7",
-        "R8",
-        "R9",
-        "R10",
-        "R11",
-        "R12",
-        "R13",
-        "R14",
         "R15",
         "R16",
         "R17"
@@ -27,17 +15,8 @@
     },
     "businessRules": {
       "total": 10,
-      "covered": 2,
-      "uncovered": [
-        "BR1",
-        "BR2",
-        "BR3",
-        "BR4",
-        "BR5",
-        "BR6",
-        "BR7",
-        "BR8"
-      ]
+      "covered": 10,
+      "uncovered": []
     },
     "nonFunctional": {
       "total": 6,
@@ -57,32 +36,12 @@
     },
     "overall": {
       "total": 33,
-      "covered": 5,
-      "percent": 15,
+      "covered": 25,
+      "percent": 76,
       "uncovered": [
-        "R3",
-        "R4",
-        "R5",
-        "R6",
-        "R7",
-        "R8",
-        "R9",
-        "R10",
-        "R11",
-        "R12",
-        "R13",
-        "R14",
         "R15",
         "R16",
         "R17",
-        "BR1",
-        "BR2",
-        "BR3",
-        "BR4",
-        "BR5",
-        "BR6",
-        "BR7",
-        "BR8",
         "NFR2",
         "NFR3",
         "NFR4",
@@ -118,30 +77,10 @@
         "NFR2"
       ],
       "missing": [
-        "R3",
-        "R4",
-        "R5",
-        "R6",
-        "R7",
-        "R8",
-        "R9",
-        "R10",
-        "R11",
-        "R12",
-        "R13",
-        "R14",
-        "BR1",
-        "BR2",
-        "BR3",
-        "BR4",
-        "BR5",
-        "BR6",
-        "BR7",
-        "BR8",
         "NFR1",
         "NFR2"
       ],
-      "message": "Epic 2 claims R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, BR1, BR2, BR3, BR4, BR5, BR6, BR7, BR8, NFR1, NFR2 in feature-overview but no story references them"
+      "message": "Epic 2 claims NFR1, NFR2 in feature-overview but no story references them"
     }
   },
   "warnings": []
