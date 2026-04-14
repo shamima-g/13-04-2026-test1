@@ -46,10 +46,10 @@ import type { NextRequest } from 'next/server';
  * '/admin/settings': { role: UserRole.ADMIN }
  *
  * // Any of multiple roles
- * '/reports': { roles: [UserRole.ADMIN, UserRole.POWER_USER] }
+ * '/reports': { roles: [UserRole.ADMIN, UserRole.TEAM_MEMBER] }
  *
  * // Minimum role level (hierarchy-based)
- * '/dashboard': { minimumRole: UserRole.STANDARD_USER }
+ * '/dashboard': { minimumRole: UserRole.TEAM_MEMBER }
  *
  * // Any authenticated user
  * '/profile': { authenticated: true }
@@ -73,7 +73,7 @@ export type ProxyConfig = {
   /**
    * Behavior when user has no role or role is missing from session.
    * - 'deny': Treat as unauthorized (403 Forbidden) - more secure
-   * - 'lowest': Treat as lowest privilege role (READ_ONLY) - more permissive
+   * - 'lowest': Treat as lowest privilege role (team-member) - more permissive
    * @default 'deny'
    */
   missingRoleBehavior?: 'deny' | 'lowest';
@@ -102,29 +102,21 @@ export type ProxyConfig = {
  * Examples provided below - replace with your actual routes.
  */
 export const routeProtection: Record<string, RouteProtectionConfig> = {
-  // Admin-only routes
+  // Admin-only routes (FRS: admin role only)
   '/admin': { role: UserRole.ADMIN },
   '/api/admin': { role: UserRole.ADMIN },
+  '/tasks/all': { role: UserRole.ADMIN },
+  '/api/tasks/all': { role: UserRole.ADMIN },
 
-  // Power user and above routes
-  '/management': { minimumRole: UserRole.POWER_USER },
-  '/api/management': { minimumRole: UserRole.POWER_USER },
-
-  // Routes accessible by specific roles
-  '/reports': { roles: [UserRole.ADMIN, UserRole.POWER_USER] },
-  '/api/reports': { roles: [UserRole.ADMIN, UserRole.POWER_USER] },
-
-  // Standard user and above routes
-  '/dashboard': { minimumRole: UserRole.STANDARD_USER },
-  '/api/dashboard': { minimumRole: UserRole.STANDARD_USER },
-
-  // Any authenticated user can access
+  // Any authenticated user (both admin and team-member)
+  '/tasks': { authenticated: true },
   '/profile': { authenticated: true },
   '/settings': { authenticated: true },
   '/api/user': { authenticated: true },
+  '/api/tasks': { authenticated: true },
 
-  // Example API routes with different protection levels
-  '/api/example/protected-action': { minimumRole: UserRole.POWER_USER },
+  // API routes for task management
+  '/api/example/protected-action': { role: UserRole.ADMIN },
 };
 
 /**
@@ -212,8 +204,8 @@ function checkAuthorization(
     if (missingRoleBehavior === 'deny') {
       return false;
     }
-    // 'lowest' behavior: treat as READ_ONLY
-    user = { role: UserRole.READ_ONLY };
+    // 'lowest' behavior: treat as lowest-privilege FRS role (team-member)
+    user = { role: UserRole.TEAM_MEMBER };
   }
 
   // Check exact role requirement

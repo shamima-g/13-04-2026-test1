@@ -44,8 +44,8 @@ export function hasRole(
  *
  * @example
  * ```ts
- * if (hasAnyRole(session?.user, [UserRole.ADMIN, UserRole.POWER_USER])) {
- *   // User is either admin or power user
+ * if (hasAnyRole(session?.user, [UserRole.ADMIN, UserRole.TEAM_MEMBER])) {
+ *   // User is either admin or team-member
  * }
  * ```
  */
@@ -67,9 +67,9 @@ export function hasAnyRole(
  *
  * @example
  * ```ts
- * // ADMIN (100) and POWER_USER (50) can access, others cannot
- * if (hasMinimumRole(session?.user, UserRole.POWER_USER)) {
- *   // User has power user privileges or higher
+ * // ADMIN (100) can access; TEAM_MEMBER (10) cannot
+ * if (hasMinimumRole(session?.user, UserRole.ADMIN)) {
+ *   // User has admin privileges
  * }
  * ```
  */
@@ -142,10 +142,9 @@ export async function requireRole(role: UserRole): Promise<Session> {
  *
  * @example
  * ```ts
- * export default async function PowerUserPage() {
- *   // ADMIN and POWER_USER can access
- *   const session = await requireMinimumRole(UserRole.POWER_USER);
- *   return <div>Power User Features</div>;
+ * export default async function AdminPage() {
+ *   const session = await requireMinimumRole(UserRole.ADMIN);
+ *   return <div>Admin Features</div>;
  * }
  * ```
  */
@@ -173,8 +172,8 @@ export async function requireMinimumRole(
  * @example
  * ```ts
  * export default async function ManagementPage() {
- *   const session = await requireAnyRole([UserRole.ADMIN, UserRole.POWER_USER]);
- *   return <div>Management Dashboard</div>;
+ *   const session = await requireAnyRole([UserRole.ADMIN, UserRole.TEAM_MEMBER]);
+ *   return <div>Shared Dashboard</div>;
  * }
  * ```
  */
@@ -207,12 +206,12 @@ export async function requireAnyRole(roles: UserRole[]): Promise<Session> {
  *   { role: UserRole.ADMIN }
  * );
  *
- * // Protect route requiring minimum power user level
+ * // Protect route requiring minimum team-member level (any authenticated user)
  * export const POST = withRoleProtection(
  *   async (request) => {
  *     return NextResponse.json({ success: true });
  *   },
- *   { minimumRole: UserRole.POWER_USER }
+ *   { minimumRole: UserRole.TEAM_MEMBER }
  * );
  *
  * // Protect route requiring any of specified roles
@@ -220,7 +219,7 @@ export async function requireAnyRole(roles: UserRole[]): Promise<Session> {
  *   async (request) => {
  *     return NextResponse.json({ deleted: true });
  *   },
- *   { roles: [UserRole.ADMIN, UserRole.POWER_USER] }
+ *   { roles: [UserRole.ADMIN, UserRole.TEAM_MEMBER] }
  * );
  * ```
  */
@@ -309,21 +308,19 @@ export function isAuthorized(
 ): boolean {
   if (!user) return false;
 
-  // Example authorization rules - customize for your application
+  // Authorization rules for FRS roles (admin and team-member)
   switch (resource) {
     case 'user-profile':
       if (action === 'read') return true; // All authenticated users can read profiles
-      if (action === 'write')
-        return hasMinimumRole(user, UserRole.STANDARD_USER);
+      if (action === 'write') return true; // Both roles can update their own profile
       if (action === 'delete') return hasRole(user, UserRole.ADMIN);
       if (action === 'admin') return hasRole(user, UserRole.ADMIN);
       break;
 
-    case 'document':
-      if (action === 'read') return hasMinimumRole(user, UserRole.READ_ONLY);
-      if (action === 'write')
-        return hasMinimumRole(user, UserRole.STANDARD_USER);
-      if (action === 'delete') return hasMinimumRole(user, UserRole.POWER_USER);
+    case 'task':
+      if (action === 'read') return true; // Both roles can read tasks (filtered by role in API)
+      if (action === 'write') return hasRole(user, UserRole.ADMIN); // Only admin creates/edits
+      if (action === 'delete') return hasRole(user, UserRole.ADMIN); // Only admin deletes
       if (action === 'admin') return hasRole(user, UserRole.ADMIN);
       break;
 

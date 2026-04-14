@@ -7,21 +7,20 @@
  * Route: /tasks
  * Auth: Required (handled by (protected) layout — BR10)
  *
- * Note: Full task list UI is implemented in Epic 2.
- * This is a minimal placeholder that satisfies AC-1 and AC-3 routing.
+ * Epic 2, Story 1 — replaces the Epic 1 placeholder shell.
+ * FRS-Over-Template: story ACs and FRS are the source of truth.
  */
 
 import { requireAuth } from '@/lib/auth/auth-server';
+import TaskListClient from '@/components/tasks/TaskListClient';
 
 export default async function TasksPage() {
-  const session = await requireAuth();
+  await requireAuth();
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-4">My Tasks</h1>
-      <p className="text-muted-foreground">
-        Welcome, {session.user.name}. Your assigned tasks will appear here.
-      </p>
+      <h1 className="text-2xl font-bold mb-6">My Tasks</h1>
+      <TaskListClient role="team-member" />
     </main>
   );
 }
