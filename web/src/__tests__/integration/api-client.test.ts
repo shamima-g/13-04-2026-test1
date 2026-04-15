@@ -1,28 +1,16 @@
 /**
  * Integration Test: API Client
  *
- * This template demonstrates best practices for integration testing
- * in this project. Integration tests verify that multiple units work
- * together correctly, such as API clients, data fetching, and error handling.
- *
- * Best practices for integration tests:
- * - Test realistic user workflows end-to-end
- * - Mock external dependencies (actual API calls)
- * - Verify data flows through multiple layers
- * - Test error scenarios and edge cases
- * - Use descriptive test names that describe the scenario
+ * Tests verify that the API client correctly formats requests and handles
+ * responses. Uses fetch spy to verify HTTP layer behavior.
  */
 
-import { vi, type Mock } from 'vitest';
+import { vi, beforeEach } from 'vitest';
 import { apiClient, get, post } from '@/lib/api/client';
 import type { APIError } from '@/types/api';
 
-// Mock the global fetch function
-global.fetch = vi.fn();
-
 describe('API Client Integration Tests', () => {
   beforeEach(() => {
-    // Clear all mocks before each test
     vi.clearAllMocks();
   });
 
@@ -30,12 +18,12 @@ describe('API Client Integration Tests', () => {
     it('should fetch data and parse JSON response', async () => {
       // Arrange
       const mockData = { id: 1, name: 'Test User' };
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockData,
-      });
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
 
       // Act
       const result = await apiClient<typeof mockData>('/v1/users/1', {
@@ -56,12 +44,12 @@ describe('API Client Integration Tests', () => {
       // Arrange
       const requestBody = { name: 'New User', email: 'user@example.com' };
       const mockResponse = { id: 2, ...requestBody };
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 201,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockResponse,
-      });
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify(mockResponse), {
+          status: 201,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
 
       // Act
       const result = await post<typeof mockResponse>(
@@ -87,12 +75,12 @@ describe('API Client Integration Tests', () => {
     it('should handle query parameters', async () => {
       // Arrange
       const mockData = [{ id: 1, name: 'User 1' }];
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockData,
-      });
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
 
       // Act
       await get<typeof mockData>('/v1/users', { role: 'admin', active: true });
@@ -112,13 +100,13 @@ describe('API Client Integration Tests', () => {
   describe('Error handling', () => {
     it('should handle 404 errors with proper error structure', async () => {
       // Arrange
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ Messages: ['User not found'] }),
-      });
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify({ Messages: ['User not found'] }), {
+          status: 404,
+          statusText: 'Not Found',
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
 
       // Act & Assert
       try {
@@ -134,13 +122,13 @@ describe('API Client Integration Tests', () => {
 
     it('should handle 500 server errors', async () => {
       // Arrange
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({}),
-      });
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify({}), {
+          status: 500,
+          statusText: 'Internal Server Error',
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
 
       // Act & Assert
       try {
@@ -155,7 +143,7 @@ describe('API Client Integration Tests', () => {
 
     it('should handle network errors', async () => {
       // Arrange
-      (global.fetch as Mock).mockRejectedValueOnce(
+      vi.spyOn(global, 'fetch').mockRejectedValueOnce(
         new TypeError('Failed to fetch'),
       );
 
@@ -175,12 +163,12 @@ describe('API Client Integration Tests', () => {
     it('should include LastChangedUser header for audit trails', async () => {
       // Arrange
       const mockData = { success: true };
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockData,
-      });
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
 
       // Act
       await apiClient('/v1/data', {
@@ -202,11 +190,12 @@ describe('API Client Integration Tests', () => {
 
     it('should handle 204 No Content responses', async () => {
       // Arrange
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 204,
-        headers: new Headers(),
-      });
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+        new Response(null, {
+          status: 204,
+          headers: {},
+        }),
+      );
 
       // Act
       const result = await apiClient('/v1/users/1', { method: 'DELETE' });

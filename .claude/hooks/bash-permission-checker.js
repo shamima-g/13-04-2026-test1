@@ -408,6 +408,7 @@ const subPathE = '(?:[\\w./\\\\()-]|\\\\ )';              // subpath chars inclu
 const npmPrefix = '(?:--prefix\\s+["\']?[\\w./:~\\\\()-]+["\']?\\s+)?';
 const envPrefix = '(?:[A-Z_][A-Z0-9_]*=["\']?[\\w./:~= -]+["\']?\\s+)*';  // optional VAR=value prefixes (with optional quotes)
 const cdEnvPrefix = cdPrefix + envPrefix;
+const grepFlags = '(?:\\s+-[\\w]+(?:\\s+\\d+)?)*';  // grep flags with optional numeric arg (e.g. -A 3, -C 2)
 
 let allowPatterns = [
   // --- NPM ---
@@ -422,7 +423,7 @@ let allowPatterns = [
   cdEnvPrefix + 'npm\\s+' + npmPrefix + 'i(?:\\s+--[\\w-]+)*\\s+msw(?:\\s+--[\\w-]+)*\\s*$',
   cdEnvPrefix + 'npm\\s+' + npmPrefix + 'test(?:\\s+.*)?$',
   cdEnvPrefix + 'npm\\s+' + npmPrefix + 't(?:\\s+.*)?$',
-  cdEnvPrefix + 'npm\\s+' + npmPrefix + 'run\\s+(build|lint|dev|format|test|typecheck|check|generate)(?::\\w+)?(?:\\s+.*)?$',
+  cdEnvPrefix + 'npm\\s+' + npmPrefix + 'run\\s+(build|lint|dev|format|test|typecheck|tsc|check|generate)(?::\\w+)?(?:\\s+.*)?$',
   cdEnvPrefix + 'npm\\s+' + npmPrefix + 'audit(?:\\s+.*)?$',
   cdEnvPrefix + 'npm\\s+' + npmPrefix + 'exec\\s+(?:--\\s+)?(tsc|vitest|eslint|next|msw|prettier|shadcn)(?:\\s+.*)?$',
   cdPrefix + '(?:test\\s+-d|\\[\\s+-d)\\s+node_modules\\s*\\]?(?:\\s*[&|]+\\s*(?:echo\\s+["\'].*["\']|\\(echo\\s+["\'].*["\']\\)|\\(?npm\\s+install\\)?)\\s*)*$',
@@ -455,7 +456,7 @@ let allowPatterns = [
   cdPrefix + 'type\\s+' + winPath + safeDirs + '[/\\\\]' + subPathE + '+["\']?\\s*$',
   cdPrefix + 'cat\\s+' + winPath + '[\\w.-]+\\.config\\.[\\w]+["\']?\\s*$',
   cdPrefix + 'type\\s+' + winPath + '[\\w.-]+\\.config\\.[\\w]+["\']?\\s*$',
-  cdPrefix + 'grep(?:\\s+-[\\w]+)*\\s+(?:["\'][^"\']*["\']|\\S+)\\s+' + winPath + safeDirs + '[/\\\\]' + subPathE + '+["\']?\\s*$',
+  cdPrefix + 'grep' + grepFlags + '\\s+(?:["\'][^"\']*["\']|\\S+)\\s+' + winPath + safeDirs + '[/\\\\]' + subPathE + '+["\']?\\s*$',
   cdPrefix + '(head|tail)(?:\\s+[-+]?[\\w]+)*\\s+' + winPath + safeDirs + '[/\\\\]' + subPathE + '+["\']?\\s*$',
   cdPrefix + 'wc(?:\\s+-[lwcmL]+)*\\s+' + winPath + safeDirs + '[/\\\\]' + subPathE + '+["\']?\\s*$',
   cdPrefix + 'diff(?:\\s+--?[\\w-]+)*\\s+' + winPath + safeDirs + '[/\\\\]' + subPathE + '+["\']?\\s+' + winPath + safeDirs + '[/\\\\]' + subPathE + '+["\']?\\s*$',
@@ -469,7 +470,7 @@ let allowPatterns = [
   cdPrefix + 'diff(?:\\s+--?[\\w-]+)*\\s+["\'][\\w./:~\\\\ ()-]*' + safeDirs + '[/\\\\]' + subPathQ + '+["\']\\s+["\'][\\w./:~\\\\ ()-]*' + safeDirs + '[/\\\\]' + subPathQ + '+["\']\\s*$',
 
   // --- Pipeline filter commands (no file argument) ---
-  cdPrefix + 'grep(?:\\s+-[\\w]+)*\\s+(?:["\'][^"\']*["\']|\\S+)\\s*$',
+  cdPrefix + 'grep' + grepFlags + '\\s+(?:["\'][^"\']*["\']|\\S+)\\s*$',
   cdPrefix + '(head|tail)(?:\\s+[-+]?[\\w]+)*\\s*$',
   cdPrefix + 'wc(?:\\s+-[lwcmL]+)*\\s*$',
   cdPrefix + 'sort(?:\\s+[-\\w]+)*\\s*$',

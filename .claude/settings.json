@@ -191,7 +191,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.github/scripts/generate-progress-index.js\"",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/scripts/generate-progress-index.js\"",
             "timeout": 30
           }
         ]

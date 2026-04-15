@@ -1,17 +1,11 @@
 /**
  * Integration Test: Page Rendering
  *
- * This template demonstrates integration testing for Next.js pages
- * with data fetching, user interactions, and state management.
- *
- * Best practices:
- * - Test complete user workflows (load page -> interact -> verify result)
- * - Mock API calls but test real component interactions
- * - Verify accessibility and user experience
- * - Test loading states, error states, and success states
+ * Tests page components with data fetching, user interactions, and state
+ * management. Uses fetch spy to verify HTTP interactions.
  */
 
-import { vi, type Mock } from 'vitest';
+import { vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
@@ -49,9 +43,6 @@ function ExampleDataPage() {
   );
 }
 
-// Mock fetch globally
-global.fetch = vi.fn();
-
 describe('Page Rendering Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -62,10 +53,12 @@ describe('Page Rendering Integration Tests', () => {
       // Arrange
       const user = userEvent.setup();
       const mockData = { name: 'Test Data' };
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockData,
-      });
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
 
       render(<ExampleDataPage />);
 
@@ -85,9 +78,9 @@ describe('Page Rendering Integration Tests', () => {
     it('should display error message when fetch fails', async () => {
       // Arrange
       const user = userEvent.setup();
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: false,
-      });
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+        new Response(null, { status: 400 }),
+      );
 
       render(<ExampleDataPage />);
 
@@ -104,7 +97,9 @@ describe('Page Rendering Integration Tests', () => {
     it('should handle network errors', async () => {
       // Arrange
       const user = userEvent.setup();
-      (global.fetch as Mock).mockRejectedValueOnce(new Error('Network error'));
+      vi.spyOn(global, 'fetch').mockRejectedValueOnce(
+        new Error('Network error'),
+      );
 
       render(<ExampleDataPage />);
 
@@ -132,8 +127,20 @@ describe('Page Rendering Integration Tests', () => {
     it('should disable button during loading', async () => {
       // Arrange
       const user = userEvent.setup();
-      (global.fetch as Mock).mockImplementationOnce(
-        () => new Promise((resolve) => setTimeout(resolve, 100)),
+      vi.spyOn(global, 'fetch').mockImplementationOnce(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(
+              () =>
+                resolve(
+                  new Response(JSON.stringify({}), {
+                    status: 200,
+                    headers: { 'content-type': 'application/json' },
+                  }),
+                ),
+              100,
+            ),
+          ),
       );
 
       render(<ExampleDataPage />);

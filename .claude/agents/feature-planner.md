@@ -499,10 +499,13 @@ git push origin main
    git commit -m "docs(traceability): update requirements matrix for epic [N]"
    git push origin main
    ```
-3. Read: `generated-docs/stories/_requirements-traceability.json`
-4. If the `warnings` array is non-empty, report each warning to the orchestrator.
-5. If `epicGaps` has entries for the current epic, report: *"Warning: Epic N's feature-overview claims [IDs] but no story references them."*
-6. If this is the final epic (`epicsScoped === totalEpics`) and `coverage.overall.uncovered` is non-empty, report: *"COVERAGE GAP: [count] FRS requirements have no implementing story: [IDs]. User must acknowledge before proceeding."* — this is the blocking final validation. The orchestrator must get explicit user acknowledgment before transitioning to REALIGN.
+3. Run the traceability summary script to check for warnings and coverage:
+   ```bash
+   node .claude/scripts/traceability-summary.js generated-docs/stories/_requirements-traceability.json --full
+   ```
+4. If warnings are listed, report each warning to the orchestrator.
+5. If epic gaps are listed for the current epic, report: *"Warning: Epic N's feature-overview claims [IDs] but no story references them."*
+6. If this is the final epic (scoped N/N) and uncovered requirements are listed, report: *"COVERAGE GAP: [count] FRS requirements have no implementing story: [IDs]. User must acknowledge before proceeding."* — this is the blocking final validation. The orchestrator must get explicit user acknowledgment before transitioning to REALIGN.
 
 ### Step S5: Return to Orchestrator
 

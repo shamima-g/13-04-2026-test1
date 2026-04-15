@@ -3,6 +3,8 @@
  *
  * Tests the complete authorization flow through withRoleProtection,
  * verifying auth + role checking + validation work together correctly.
+ *
+ * Updated for FRS: two roles only — admin and team-member.
  */
 
 import { vi, describe, it, expect, beforeEach, type Mock } from 'vitest';
@@ -65,8 +67,8 @@ describe('RBAC Integration Tests', () => {
       expect(body.error).toContain('Unauthorized');
     });
 
-    it('should return 403 when user lacks required exact role', async () => {
-      mockAuth.mockResolvedValue(createSession(UserRole.STANDARD_USER));
+    it('should return 403 when team-member lacks admin role', async () => {
+      mockAuth.mockResolvedValue(createSession(UserRole.TEAM_MEMBER));
 
       const protectedHandler = withRoleProtection(successHandler, {
         role: UserRole.ADMIN,
@@ -79,11 +81,11 @@ describe('RBAC Integration Tests', () => {
       expect(body.error).toContain('Forbidden');
     });
 
-    it('should return 403 when user does not meet minimum role requirement', async () => {
-      mockAuth.mockResolvedValue(createSession(UserRole.STANDARD_USER));
+    it('should return 403 when team-member does not meet admin minimum role', async () => {
+      mockAuth.mockResolvedValue(createSession(UserRole.TEAM_MEMBER));
 
       const protectedHandler = withRoleProtection(successHandler, {
-        minimumRole: UserRole.POWER_USER,
+        minimumRole: UserRole.ADMIN,
       });
 
       const response = await protectedHandler(createMockRequest());
@@ -91,11 +93,11 @@ describe('RBAC Integration Tests', () => {
       expect(response.status).toBe(403);
     });
 
-    it('should return 403 when user has none of the required roles', async () => {
-      mockAuth.mockResolvedValue(createSession(UserRole.STANDARD_USER));
+    it('should return 403 when user role is not in admin-only roles array', async () => {
+      mockAuth.mockResolvedValue(createSession(UserRole.TEAM_MEMBER));
 
       const protectedHandler = withRoleProtection(successHandler, {
-        roles: [UserRole.ADMIN, UserRole.POWER_USER],
+        roles: [UserRole.ADMIN],
       });
 
       const response = await protectedHandler(createMockRequest());
@@ -103,7 +105,7 @@ describe('RBAC Integration Tests', () => {
       expect(response.status).toBe(403);
     });
 
-    it('should allow access when user has exact required role', async () => {
+    it('should allow access when admin has exact required role', async () => {
       mockAuth.mockResolvedValue(createSession(UserRole.ADMIN));
 
       const protectedHandler = withRoleProtection(successHandler, {
@@ -117,11 +119,11 @@ describe('RBAC Integration Tests', () => {
       expect(body.success).toBe(true);
     });
 
-    it('should allow access when user meets minimum role requirement', async () => {
+    it('should allow access when admin meets minimum role requirement', async () => {
       mockAuth.mockResolvedValue(createSession(UserRole.ADMIN));
 
       const protectedHandler = withRoleProtection(successHandler, {
-        minimumRole: UserRole.POWER_USER,
+        minimumRole: UserRole.TEAM_MEMBER,
       });
 
       const response = await protectedHandler(createMockRequest());
@@ -129,11 +131,11 @@ describe('RBAC Integration Tests', () => {
       expect(response.status).toBe(200);
     });
 
-    it('should allow access when user has any of the required roles', async () => {
-      mockAuth.mockResolvedValue(createSession(UserRole.POWER_USER));
+    it('should allow access when team-member is in allowed roles array', async () => {
+      mockAuth.mockResolvedValue(createSession(UserRole.TEAM_MEMBER));
 
       const protectedHandler = withRoleProtection(successHandler, {
-        roles: [UserRole.ADMIN, UserRole.POWER_USER],
+        roles: [UserRole.ADMIN, UserRole.TEAM_MEMBER],
       });
 
       const response = await protectedHandler(createMockRequest());
@@ -166,7 +168,7 @@ describe('RBAC Integration Tests', () => {
 
           return NextResponse.json({ success: true, data: validation.data });
         },
-        { minimumRole: UserRole.POWER_USER },
+        { minimumRole: UserRole.TEAM_MEMBER },
       );
 
       const response = await handlerWithValidation(createMockRequest());
@@ -194,7 +196,7 @@ describe('RBAC Integration Tests', () => {
 
           return NextResponse.json({ success: true });
         },
-        { minimumRole: UserRole.POWER_USER },
+        { minimumRole: UserRole.TEAM_MEMBER },
       );
 
       const response = await handlerWithValidation(createMockRequest());
@@ -206,7 +208,7 @@ describe('RBAC Integration Tests', () => {
     });
 
     it('should return 403 before validation when not authorized', async () => {
-      mockAuth.mockResolvedValue(createSession(UserRole.READ_ONLY));
+      mockAuth.mockResolvedValue(createSession(UserRole.TEAM_MEMBER));
 
       let validationCalled = false;
       const handlerWithValidation = withRoleProtection(
@@ -214,7 +216,7 @@ describe('RBAC Integration Tests', () => {
           validationCalled = true;
           return NextResponse.json({ success: true });
         },
-        { minimumRole: UserRole.POWER_USER },
+        { minimumRole: UserRole.ADMIN },
       );
 
       const response = await handlerWithValidation(createMockRequest());

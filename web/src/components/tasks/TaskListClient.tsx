@@ -25,6 +25,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import TaskDetailModal from '@/components/tasks/TaskDetailModal';
+import CreateTaskForm from '@/components/tasks/CreateTaskForm';
 import { listTasks } from '@/lib/api/endpoints';
 import type {
   ListTasksResponse,
@@ -54,6 +55,7 @@ export default function TaskListClient({ role }: TaskListClientProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [createFormOpen, setCreateFormOpen] = useState(false);
 
   const fetchTasks = useCallback(async (statusFilter: FilterValue) => {
     setIsLoading(true);
@@ -94,6 +96,11 @@ export default function TaskListClient({ role }: TaskListClientProps) {
     setSelectedTask(null);
   };
 
+  const handleTaskCreated = useCallback(() => {
+    // Refresh the task list after creation to show the new task — AC-11
+    fetchTasks(filter);
+  }, [fetchTasks, filter]);
+
   const renderEmptyState = () => {
     // If a filter is active and produced no results, show the generic filter message.
     if (filter !== 'all') {
@@ -129,36 +136,46 @@ export default function TaskListClient({ role }: TaskListClientProps) {
 
   return (
     <div className="space-y-4">
-      {/* Status filter buttons — AC-5 */}
-      <div
-        className="flex gap-2"
-        role="group"
-        aria-label="Filter tasks by status"
-      >
-        <Button
-          variant={filter === 'all' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => handleFilterChange('all')}
-          aria-pressed={filter === 'all'}
+      {/* Top bar: filter buttons + Create Task button (admin only) */}
+      <div className="flex items-center justify-between gap-2">
+        {/* Status filter buttons — AC-5 */}
+        <div
+          className="flex gap-2"
+          role="group"
+          aria-label="Filter tasks by status"
         >
-          All
-        </Button>
-        <Button
-          variant={filter === 'pending' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => handleFilterChange('pending')}
-          aria-pressed={filter === 'pending'}
-        >
-          Pending
-        </Button>
-        <Button
-          variant={filter === 'complete' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => handleFilterChange('complete')}
-          aria-pressed={filter === 'complete'}
-        >
-          Complete
-        </Button>
+          <Button
+            variant={filter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleFilterChange('all')}
+            aria-pressed={filter === 'all'}
+          >
+            All
+          </Button>
+          <Button
+            variant={filter === 'pending' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleFilterChange('pending')}
+            aria-pressed={filter === 'pending'}
+          >
+            Pending
+          </Button>
+          <Button
+            variant={filter === 'complete' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleFilterChange('complete')}
+            aria-pressed={filter === 'complete'}
+          >
+            Complete
+          </Button>
+        </div>
+
+        {/* Create Task button — admin only, AC-1, AC-2 */}
+        {role === 'admin' && (
+          <Button size="sm" onClick={() => setCreateFormOpen(true)}>
+            Create Task
+          </Button>
+        )}
       </div>
 
       {/* Loading state — AC-12 */}
@@ -249,6 +266,15 @@ export default function TaskListClient({ role }: TaskListClientProps) {
         open={modalOpen}
         onClose={handleModalClose}
       />
+
+      {/* Create task form — Story 3 (admin only) */}
+      {role === 'admin' && (
+        <CreateTaskForm
+          open={createFormOpen}
+          onClose={() => setCreateFormOpen(false)}
+          onTaskCreated={handleTaskCreated}
+        />
+      )}
     </div>
   );
 }

@@ -103,6 +103,9 @@ testCommand('find web/src/app/(protected) -name "*.tsx"', 'allow', 'find in Next
 testCommand('pwd', 'allow', 'pwd');
 testCommand('node --version', 'allow', 'node --version');
 testCommand('npm run generate:types', 'allow', 'npm run generate:types');
+testCommand('npm run tsc', 'allow', 'npm run tsc');
+testCommand('npm run tsc --noEmit', 'allow', 'npm run tsc with flags');
+testCommand('cd web && npm run tsc', 'allow', 'cd prefix + npm run tsc');
 
 // =============================================================================
 // Git read-only commands
@@ -782,6 +785,16 @@ testCommand('cat web/package.json | sort', 'allow', 'cat safe-dir | sort');
 testCommand('cat web/package.json | sort | uniq', 'allow', 'cat safe-dir | sort | uniq');
 testCommand('cat documentation/BRD.md | grep "API" | wc -l', 'allow', 'cat | grep | wc pipeline');
 testCommand('cat documentation/BRD.md | head -20 | tail -5', 'allow', 'cat | head | tail pipeline');
+
+// Grep with context flags (-A/-B/-C with numeric argument)
+testCommand('cat web/src/app/page.tsx | grep -A 3 "error"', 'allow', 'cat | grep -A 3 (context flag with numeric arg)');
+testCommand('cat web/src/app/page.tsx | grep -B 5 -i "warning"', 'allow', 'cat | grep -B 5 -i (multiple flags with numeric arg)');
+testCommand('cat web/src/app/page.tsx | grep -C 2 "TODO"', 'allow', 'cat | grep -C 2 (context around match)');
+testCommand('grep -A 3 "error TS" web/src/app/page.tsx', 'allow', 'grep -A 3 with file in safe dir');
+testCommand('grep -B 10 "pattern" documentation/spec.md', 'allow', 'grep -B 10 with file in safe dir');
+
+// Full tsc-to-grep pipeline (original user-reported command)
+testCommand('cd /c/AI/project/web && npm run tsc 2>&1 | grep -A 3 "error TS"', 'allow', 'cd + npm run tsc 2>&1 | grep -A 3 (TypeScript error check)');
 
 testCommand('cat web/src/app/page.tsx 2>&1 | grep "import"', 'allow', 'cat safe-dir 2>&1 | grep (redirect + pipeline)');
 

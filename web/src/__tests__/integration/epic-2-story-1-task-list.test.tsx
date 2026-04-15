@@ -48,6 +48,21 @@ vi.mock('next/navigation', () => ({
 // ── Mock the API endpoints — never use fetch() directly ─────────────────────
 vi.mock('@/lib/api/endpoints', () => ({
   listTasks: mockListTasks,
+  listUsers: vi.fn().mockResolvedValue({ users: [], total: 0 }),
+  createTask: vi.fn(),
+}));
+
+// ── Mock ToastContext (CreateTaskForm uses useToast for admin role) ────────────
+vi.mock('@/contexts/ToastContext', () => ({
+  useToast: vi.fn(() => ({
+    showToast: vi.fn(),
+    dismissToast: vi.fn(),
+    clearAllToasts: vi.fn(),
+    toasts: [],
+  })),
+  ToastProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }));
 
 // ── Mock auth for server component support ───────────────────────────────────

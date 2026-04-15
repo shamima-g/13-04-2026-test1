@@ -9,6 +9,8 @@
  * 2. Validating request body with Zod schemas
  * 3. Proper error handling and status codes
  * 4. Type-safe request/response handling
+ *
+ * FRS roles: admin and team-member only.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -32,16 +34,15 @@ const requestSchema = z.object({
 /**
  * GET /api/example/protected-action
  *
- * Example endpoint requiring STANDARD_USER role or higher
- * Returns information about the current user's permissions
+ * Example endpoint requiring team-member role or higher (any authenticated user)
+ * Returns information about the current user's permissions.
  */
 export const GET = withRoleProtection(
   async (): Promise<NextResponse> => {
     try {
-      // This code only runs if user is authenticated with minimum STANDARD_USER role
       return NextResponse.json({
         message: 'You have access to this protected endpoint',
-        allowedActions: ['read', 'create', 'update'],
+        allowedActions: ['read'],
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -52,14 +53,14 @@ export const GET = withRoleProtection(
       );
     }
   },
-  { minimumRole: UserRole.STANDARD_USER },
+  { minimumRole: UserRole.TEAM_MEMBER },
 );
 
 /**
  * POST /api/example/protected-action
  *
- * Example endpoint requiring POWER_USER role or higher
- * Demonstrates input validation with Zod
+ * Example endpoint requiring admin role.
+ * Demonstrates input validation with Zod.
  */
 export const POST = withRoleProtection(
   async (request: NextRequest): Promise<NextResponse> => {
@@ -103,14 +104,14 @@ export const POST = withRoleProtection(
       );
     }
   },
-  { minimumRole: UserRole.POWER_USER },
+  { role: UserRole.ADMIN },
 );
 
 /**
  * DELETE /api/example/protected-action
  *
- * Example endpoint requiring ADMIN role only
- * Demonstrates exact role matching
+ * Example endpoint requiring ADMIN role only.
+ * Demonstrates exact role matching.
  */
 export const DELETE = withRoleProtection(
   async (request: NextRequest): Promise<NextResponse> => {
@@ -140,14 +141,13 @@ export const DELETE = withRoleProtection(
       );
     }
   },
-  { role: UserRole.ADMIN }, // Only exact ADMIN role can access
+  { role: UserRole.ADMIN },
 );
 
 /**
  * PATCH /api/example/protected-action
  *
- * Example endpoint requiring any of multiple roles
- * Demonstrates multi-role access
+ * Example endpoint requiring admin role.
  */
 export const PATCH = withRoleProtection(
   async (request: NextRequest): Promise<NextResponse> => {
@@ -168,5 +168,5 @@ export const PATCH = withRoleProtection(
       );
     }
   },
-  { roles: [UserRole.ADMIN, UserRole.POWER_USER] }, // Admin or Power User can access
+  { role: UserRole.ADMIN },
 );
