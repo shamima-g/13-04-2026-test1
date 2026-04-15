@@ -24,6 +24,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import TaskDetailModal from '@/components/tasks/TaskDetailModal';
 import { listTasks } from '@/lib/api/endpoints';
 import type {
   ListTasksResponse,
@@ -51,6 +52,8 @@ export default function TaskListClient({ role }: TaskListClientProps) {
   const [filter, setFilter] = useState<FilterValue>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const fetchTasks = useCallback(async (statusFilter: FilterValue) => {
     setIsLoading(true);
@@ -79,6 +82,16 @@ export default function TaskListClient({ role }: TaskListClientProps) {
 
   const handleRetry = () => {
     fetchTasks(filter);
+  };
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setSelectedTask(null);
   };
 
   const renderEmptyState = () => {
@@ -197,7 +210,16 @@ export default function TaskListClient({ role }: TaskListClientProps) {
               {tasks.map((task) => (
                 <li
                   key={task.id}
-                  className="flex flex-col gap-1 px-4 py-3 hover:bg-muted/50 transition-colors"
+                  className="flex flex-col gap-1 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => handleTaskClick(task)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      handleTaskClick(task);
+                    }
+                  }}
+                  aria-label={`View details for ${task.title}`}
                 >
                   {/* Task title — AC-2, AC-4 */}
                   <span className="font-medium text-sm">{task.title}</span>
@@ -220,6 +242,13 @@ export default function TaskListClient({ role }: TaskListClientProps) {
           )}
         </>
       )}
+
+      {/* Task detail modal — Story 2 */}
+      <TaskDetailModal
+        task={selectedTask}
+        open={modalOpen}
+        onClose={handleModalClose}
+      />
     </div>
   );
 }
