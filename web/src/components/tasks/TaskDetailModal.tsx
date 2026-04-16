@@ -22,7 +22,7 @@
  *          generated-docs/stories/epic-2-task-management/story-4-admin-edit-delete-task.md
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -46,7 +46,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { updateTask, deleteTask } from '@/lib/api/endpoints';
+import { updateTask, deleteTask, completeTask } from '@/lib/api/endpoints';
+import { TaskStatusBadge } from '@/components/tasks/TaskStatusBadge';
 import type { Task } from '@/types/api-generated';
 
 // ---------------------------------------------------------------------------
@@ -85,11 +86,6 @@ function formatDueDate(isoDate: string): string {
   });
 }
 
-/** Return title-case status label */
-function formatStatus(status: 'pending' | 'complete'): string {
-  return status === 'pending' ? 'Pending' : 'Complete';
-}
-
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
@@ -101,12 +97,16 @@ interface TaskDetailModalProps {
   open: boolean;
   /** The role of the currently signed-in user */
   role?: 'admin' | 'team-member';
+  /** The ID of the currently signed-in user — used to show Mark Complete for team-members */
+  currentUserId?: string;
   /** Called when the dialog requests to close (backdrop click, Escape key) */
   onClose: () => void;
   /** Called when a task is successfully updated — parent should refresh the list */
   onTaskUpdated?: (updatedTask: Task) => void;
   /** Called when a task is successfully deleted — parent should remove from list */
   onTaskDeleted?: (taskId: string) => void;
+  /** Called when a task is successfully marked complete — parent updates local state */
+  onTaskCompleted?: (completedTask: Task) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,9 +117,11 @@ export default function TaskDetailModal({
   task,
   open,
   role,
+  currentUserId,
   onClose,
   onTaskUpdated,
   onTaskDeleted,
+  onTaskCompleted,
 }: TaskDetailModalProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -127,6 +129,9 @@ export default function TaskDetailModal({
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState<string | null>(null);
+  const completeErrorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     register,
@@ -144,8 +149,22 @@ export default function TaskDetailModal({
       setEditError(null);
       setDeleteError(null);
       setDeleteAlertOpen(false);
+      setCompleteError(null);
+      if (completeErrorTimer.current) {
+        clearTimeout(completeErrorTimer.current);
+        completeErrorTimer.current = null;
+      }
     }
   }, [open]);
+
+  // Cleanup auto-dismiss timer on unmount
+  useEffect(() => {
+    return () => {
+      if (completeErrorTimer.current) {
+        clearTimeout(completeErrorTimer.current);
+      }
+    };
+  }, []);
 
   // Populate form when entering edit mode
   useEffect(() => {
@@ -157,6 +176,48 @@ export default function TaskDetailModal({
       });
     }
   }, [isEditMode, task, reset]);
+
+  /**
+   * Handle "Mark Complete" click inside the modal.
+   * Only shown for team-member viewing their own pending task (R11, BR6, BR8).
+   */
+  const handleMarkComplete = async () => {
+    if (!task) return;
+    setIsCompleting(true);
+    setCompleteError(null);
+    if (completeErrorTimer.current) {
+      clearTimeout(completeErrorTimer.current);
+      completeErrorTimer.current = null;
+    }
+
+    try {
+      const updatedTask = await completeTask(task.id);
+      onTaskCompleted?.(updatedTask);
+    } catch (err: unknown) {
+      const statusCode =
+        err !== null && typeof err === 'object' && 'statusCode' in err
+          ? (err as { statusCode: number }).statusCode
+          : undefined;
+
+      if (statusCode === 409) {
+        // 409 Conflict: silently update to complete, no message
+        const silentlyUpdated = { ...task, status: 'complete' as const };
+        onTaskCompleted?.(silentlyUpdated);
+      } else {
+        const message =
+          statusCode === 403
+            ? 'Unable to complete this task.'
+            : 'Something went wrong. Please try again.';
+        setCompleteError(message);
+        // Auto-dismiss after 4 seconds (BA decision: 3–5s)
+        completeErrorTimer.current = setTimeout(() => {
+          setCompleteError(null);
+        }, 4000);
+      }
+    } finally {
+      setIsCompleting(false);
+    }
+  };
 
   const handleEditClick = () => {
     setEditError(null);
@@ -369,10 +430,36 @@ export default function TaskDetailModal({
                     <div>
                       <dt className="font-medium text-foreground">Status</dt>
                       <dd className="mt-1">
-                        <StatusBadge status={task.status} />
+                        <TaskStatusBadge status={task.status} />
                       </dd>
                     </div>
                   </dl>
+
+                  {/* Mark Complete error — auto-dismissing (Story 5, AC-10) */}
+                  {completeError && (
+                    <div
+                      role="alert"
+                      className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                    >
+                      {completeError}
+                    </div>
+                  )}
+
+                  {/* Mark Complete control — team-member only, own pending tasks (R11, BR6, BR8) */}
+                  {role === 'team-member' &&
+                    !!currentUserId &&
+                    task.assignedUserId === currentUserId &&
+                    task.status === 'pending' && (
+                      <div className="flex justify-start pt-2">
+                        <Button
+                          size="sm"
+                          disabled={isCompleting}
+                          onClick={handleMarkComplete}
+                        >
+                          {isCompleting ? 'Saving…' : 'Mark Complete'}
+                        </Button>
+                      </div>
+                    )}
 
                   {/* Admin controls — Edit and Delete (R9, R10) */}
                   {role === 'admin' && (
@@ -432,17 +519,4 @@ export default function TaskDetailModal({
       </AlertDialog>
     </>
   );
-}
-
-// ---------------------------------------------------------------------------
-// Status badge (inline helper)
-// ---------------------------------------------------------------------------
-
-function StatusBadge({ status }: { status: 'pending' | 'complete' }) {
-  const label = formatStatus(status);
-  const className =
-    status === 'pending'
-      ? 'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800'
-      : 'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800';
-  return <span className={className}>{label}</span>;
 }

@@ -15,12 +15,12 @@ import { requireAuth } from '@/lib/auth/auth-server';
 import TaskListClient from '@/components/tasks/TaskListClient';
 
 export default async function TasksPage() {
-  await requireAuth();
+  const session = await requireAuth();
 
   return (
     <main className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">My Tasks</h1>
-      <TaskListClient role="team-member" />
+      <TaskListClient role="team-member" currentUserId={session.user.id} />
     </main>
   );
 }
