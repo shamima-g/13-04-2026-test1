@@ -22,48 +22,48 @@
 
 ### Edit Controls Visible for Admin (R9)
 
-- [ ] AC-1: Given I am signed in as an admin and I open a task's detail modal, when the modal opens, then I can see an edit control (button or icon) to edit the task.
-- [ ] AC-2: Given I am signed in as a team-member and I open a task's detail modal, when the modal opens, then I do not see any edit control.
+- [x] AC-1: Given I am signed in as an admin and I open a task's detail modal, when the modal opens, then I can see an edit control (button or icon) to edit the task.
+- [x] AC-2: Given I am signed in as a team-member and I open a task's detail modal, when the modal opens, then I do not see any edit control.
 
 ### Editing a Task (R9, BR5)
 
-- [ ] AC-3: Given I am an admin and I activate the edit control in the task detail modal, when I click it, then the modal switches to an edit mode showing the title, description, and due date as editable fields.
-- [ ] AC-4: Given the task is in edit mode, when I look at the assigned user field, then it is shown but cannot be changed — it is locked or read-only (BR5).
-- [ ] AC-5: Given I am in edit mode and I change the title to something valid and save, when the API accepts the change, then the modal updates to show the new title.
-- [ ] AC-6: Given I am in edit mode and I change the description and save, when the API accepts the change, then the modal updates to show the new description.
-- [ ] AC-7: Given I am in edit mode and I change the due date and save, when the API accepts the change, then the modal updates to show the new due date.
-- [ ] AC-8: Given I am in edit mode and I save valid changes, when the save succeeds, then the task list in the background also reflects the updated values.
+- [x] AC-3: Given I am an admin and I activate the edit control in the task detail modal, when I click it, then the modal switches to an edit mode showing the title, description, and due date as editable fields.
+- [x] AC-4: Given the task is in edit mode, when I look at the assigned user field, then it is shown but cannot be changed — it is locked or read-only (BR5).
+- [x] AC-5: Given I am in edit mode and I change the title to something valid and save, when the API accepts the change, then the modal updates to show the new title.
+- [x] AC-6: Given I am in edit mode and I change the description and save, when the API accepts the change, then the modal updates to show the new description.
+- [x] AC-7: Given I am in edit mode and I change the due date and save, when the API accepts the change, then the modal updates to show the new due date.
+- [x] AC-8: Given I am in edit mode and I save valid changes, when the save succeeds, then the task list in the background also reflects the updated values.
 
 ### Edit Validation (BR1, BR3)
 
-- [ ] AC-9: Given I am in edit mode and I clear the title field and try to save, when I attempt to save, then I see an inline validation message that the title is required.
-- [ ] AC-10: Given I am in edit mode and I enter a title longer than 200 characters, when I attempt to save, then I see an inline validation message that the title is too long.
-- [ ] AC-11: Given I am in edit mode and I clear the due date and try to save, when I attempt to save, then I see an inline validation message that a due date is required.
+- [x] AC-9: Given I am in edit mode and I clear the title field and try to save, when I attempt to save, then I see an inline validation message that the title is required.
+- [x] AC-10: Given I am in edit mode and I enter a title longer than 200 characters, when I attempt to save, then I see an inline validation message that the title is too long.
+- [x] AC-11: Given I am in edit mode and I clear the due date and try to save, when I attempt to save, then I see an inline validation message that a due date is required.
 
 ### Edit Error Handling
 
-- [ ] AC-12: Given I am in edit mode and I submit valid changes, when the API call fails, then an error message is shown in the modal and the original task values are preserved — no partial update is displayed.
-- [ ] AC-13: Given the edit error message is visible, when I try saving again, then the application retries the API call.
+- [x] AC-12: Given I am in edit mode and I submit valid changes, when the API call fails, then an error message is shown in the modal and the original task values are preserved — no partial update is displayed.
+- [x] AC-13: Given the edit error message is visible, when I try saving again, then the application retries the API call.
 
 ### Cancelling an Edit
 
-- [ ] AC-14: Given I am in edit mode and I cancel without saving, when I cancel, then the modal returns to the read-only detail view showing the original task values unchanged.
+- [x] AC-14: Given I am in edit mode and I cancel without saving, when I cancel, then the modal returns to the read-only detail view showing the original task values unchanged.
 
 ### Delete Controls Visible for Admin (R10)
 
-- [ ] AC-15: Given I am signed in as an admin and I open a task's detail modal, when the modal opens, then I can see a delete control (button) to delete the task.
-- [ ] AC-16: Given I am signed in as a team-member and I open a task's detail modal, when the modal opens, then I do not see any delete control.
+- [x] AC-15: Given I am signed in as an admin and I open a task's detail modal, when the modal opens, then I can see a delete control (button) to delete the task.
+- [x] AC-16: Given I am signed in as a team-member and I open a task's detail modal, when the modal opens, then I do not see any delete control.
 
 ### Delete Confirmation Flow (R10)
 
-- [ ] AC-17: Given I am an admin and I click the delete control in the task detail modal, when I click it, then a confirmation dialog opens with the message "Delete this task? This cannot be undone."
-- [ ] AC-18: Given the delete confirmation dialog is open, when I confirm the deletion, then the API is called to delete the task.
-- [ ] AC-19: Given the deletion is confirmed and the API succeeds, when the task is deleted, then the modal closes and the task is no longer visible in the all-tasks list.
-- [ ] AC-20: Given the delete confirmation dialog is open, when I cancel without confirming, then the dialog closes, the task detail modal remains open, and the task is not deleted.
+- [x] AC-17: Given I am an admin and I click the delete control in the task detail modal, when I click it, then a confirmation dialog opens with the message "Delete this task? This cannot be undone."
+- [x] AC-18: Given the delete confirmation dialog is open, when I confirm the deletion, then the API is called to delete the task.
+- [x] AC-19: Given the deletion is confirmed and the API succeeds, when the task is deleted, then the modal closes and the task is no longer visible in the all-tasks list.
+- [x] AC-20: Given the delete confirmation dialog is open, when I cancel without confirming, then the dialog closes, the task detail modal remains open, and the task is not deleted.
 
 ### Delete Error Handling
 
-- [ ] AC-21: Given I confirmed deletion and the API call fails, when the failure occurs, then an error message is shown and the task remains in the list — it is not removed.
+- [x] AC-21: Given I confirmed deletion and the API call fails, when the failure occurs, then an error message is shown and the task remains in the list — it is not removed.
 
 ## API Endpoints (from OpenAPI spec)
 

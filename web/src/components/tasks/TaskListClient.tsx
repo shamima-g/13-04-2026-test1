@@ -260,11 +260,28 @@ export default function TaskListClient({ role }: TaskListClientProps) {
         </>
       )}
 
-      {/* Task detail modal — Story 2 */}
+      {/* Task detail modal — Stories 2 & 4 */}
       <TaskDetailModal
         task={selectedTask}
         open={modalOpen}
+        role={role}
         onClose={handleModalClose}
+        onTaskUpdated={(updatedTask) => {
+          // Update the task in local state immediately for a fast UI response
+          setTasks((prev) =>
+            prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+          );
+          setSelectedTask(updatedTask);
+          // Also refresh the list from the API to keep server state in sync — AC-8
+          fetchTasks(filter);
+        }}
+        onTaskDeleted={(taskId) => {
+          // Remove the task from local state immediately
+          setTasks((prev) => prev.filter((t) => t.id !== taskId));
+          handleModalClose();
+          // Refresh the list from the API to confirm server state — AC-19
+          fetchTasks(filter);
+        }}
       />
 
       {/* Create task form — Story 3 (admin only) */}
